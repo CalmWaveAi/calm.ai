@@ -60,7 +60,7 @@ function startCalm() {
     "Calming sound is playing. Take slow breaths 💙";
 
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  oscillator = audioCtx.createOscillator();https://calmwaveai.github.io/calm.ai/
+  oscillator = audioCtx.createOscillator();https://github.com/CalmWaveAi/calm.ai/actions/runs/21569410849
   const gainNode = audioCtx.createGain();
 
   // Default calming frequency
