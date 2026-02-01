@@ -3,8 +3,8 @@ index.html
 <!DOCTYPE html>
 <html>
 <head>
-  <title>CalmWave</title>
-  <meta name="description" content="Free AI calming sound generator to help reduce stress and anxiety">
+  <title>Calm AI</title>
+  <meta name="description" content="AI-generated calming sound to reduce stress and anxiety">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body {
@@ -40,55 +40,89 @@ index.html
 </head>
 
 <body>
-
-<h1>🧠 CalmWave</h1>
+<h1>🧠 Calm AI</h1>
 <p>Tell me how you’re feeling. I’ll generate a calming sound for you.</p>
 
 <textarea id="feelings" placeholder="I feel anxious, stressed, overwhelmed..."></textarea>
 <br>
 <button onclick="startCalm()">Calm Me Down</button>
+<button onclick="stopCalm()">Stop</button>
 
 <p id="status"></p>
 
 <script>
 let audioCtx;
-let oscillator;
+let masterGain;
+let isPlaying = false;
+let oscillators = [];
 
 function startCalm() {
+  if (isPlaying) return; // prevent multiple starts
   const text = document.getElementById("feelings").value.toLowerCase();
-  document.getElementById("status").innerText =
-    "Calming sound is playing. Take slow breaths 💙";
+  const status = document.getElementById("status");
+  status.innerText = "Calming AI sound is playing. Take slow breaths 💙";
 
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  oscillator = audioCtx.createOscillator();https://github.com/CalmWaveAi/calm.ai/actions/runs/21569410849
-  const gainNode = audioCtx.createGain();
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.05; // soft volume
+    masterGain.connect(audioCtx.destination);
+    
+    // Decide base frequency depending on mood
+    let baseFreq = 80; // default
+    if (text.includes("anxious") || text.includes("panic")) baseFreq = 60;
+    if (text.includes("sad") || text.includes("depressed")) baseFreq = 70;
+    if (text.includes("angry") || text.includes("frustrated")) baseFreq = 90;
+    if (text.includes("tired") || text.includes("sleep")) baseFreq = 40;
 
-  // Default calming frequency
-  let frequency = 80;
+    // Create multiple oscillators for a more natural sound
+    for (let i = 0; i < 3; i++) {
+      const osc = audioCtx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = baseFreq + Math.random() * 10; // slight variation
+      osc.connect(masterGain);
+      osc.start();
+      oscillators.push(osc);
+    }
 
-  // Simple AI feeling detection
-  if (text.includes("anxious") || text.includes("panic")) frequency = 60;
-  if (text.includes("sad") || text.includes("depressed")) frequency = 70;
-  if (text.includes("angry") || text.includes("frustrated")) frequency = 90;
-  if (text.includes("tired") || text.includes("sleep")) frequency = 40;
+    // Create gentle noise for texture
+    const bufferSize = 2 * audioCtx.sampleRate;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) output[i] = (Math.random() * 2 - 1) * 0.02;
+    const whiteNoise = audioCtx.createBufferSource();
+    whiteNoise.buffer = noiseBuffer;
+    whiteNoise.loop = true;
+    whiteNoise.connect(masterGain);
+    whiteNoise.start();
+    oscillators.push(whiteNoise);
 
-  oscillator.frequency.value = frequency;
-  oscillator.type = "sine";
+    // Stop after 1 hour automatically
+    setTimeout(stopCalm, 3600000);
+    isPlaying = true;
 
-  gainNode.gain.value = 1 ; // soft sound
-  oscillator.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
+  } catch (e) {
+    status.innerText = "Sorry, your browser does not support audio generation.";
+    console.error(e);
+  }
+}
 
-  oscillator.start();
-
-  // Stop after 1 hour (10800000 ms)
-  setTimeout(() => {
-    oscillator.stop();
-    document.getElementById("status").innerText =
-      "Session finished 🌙 You did great.";
-  }, 10800000);
+function stopCalm() {
+  const status = document.getElementById("status");
+  if (oscillators.length > 0) {
+    oscillators.forEach(o => {
+      try { o.stop(); } catch(e){}
+    });
+    oscillators = [];
+  }
+  if (audioCtx) {
+    try { audioCtx.close(); } catch(e){}
+  }
+  status.innerText = "Session stopped 🌙 You did great!";
+  isPlaying = false;
 }
 </script>
 
 </body>
 </html>
+
