@@ -1,0 +1,94 @@
+index.html
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Calm AI</title>
+  <meta name="description" content="Free AI calming sound generator to help reduce stress and anxiety">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eaf6f6;
+      text-align: center;
+      padding: 30px;
+    }
+    textarea {
+      width: 90%;
+      height: 120px;
+      font-size: 16px;
+      padding: 10px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 15px 25px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      background: #5abfbf;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a8a8;
+    }
+    p {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>🧠 Calm AI</h1>
+<p>Tell me how you’re feeling. I’ll generate a calming sound for you.</p>
+
+<textarea id="feelings" placeholder="I feel anxious, stressed, overwhelmed..."></textarea>
+<br>
+<button onclick="startCalm()">Calm Me Down</button>
+
+<p id="status"></p>
+
+<script>
+let audioCtx;
+let oscillator;
+
+function startCalm() {
+  const text = document.getElementById("feelings").value.toLowerCase();
+  document.getElementById("status").innerText =
+    "Calming sound is playing. Take slow breaths 💙";
+
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+
+  // Default calming frequency
+  let frequency = 80;
+
+  // Simple AI feeling detection
+  if (text.includes("anxious") || text.includes("panic")) frequency = 60;
+  if (text.includes("sad") || text.includes("depressed")) frequency = 70;
+  if (text.includes("angry") || text.includes("frustrated")) frequency = 90;
+  if (text.includes("tired") || text.includes("sleep")) frequency = 40;
+
+  oscillator.frequency.value = frequency;
+  oscillator.type = "sine";
+
+  gainNode.gain.value = 0.05; // soft sound
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  oscillator.start();
+
+  // Stop after 1 hour (3600000 ms)
+  setTimeout(() => {
+    oscillator.stop();
+    document.getElementById("status").innerText =
+      "Session finished 🌙 You did great.";
+  }, 3600000);
+}
+</script>
+
+</body>
+</html>
