@@ -75,7 +75,7 @@ function startCalm() {
   oscillator.frequency.value = frequency;
   oscillator.type = "sine";
 
-  gainNode.gain.value = 0.05; // soft sound
+  gainNode.gain.value = 1 ; // soft sound
   oscillator.connect(gainNode);
   gainNode.connect(audioCtx.destination);
 
