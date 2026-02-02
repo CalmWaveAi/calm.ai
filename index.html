@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Emotion Calm AI</title>
+<title>Dynamic Calm AI</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body { margin:0; height:100vh; display:flex; justify-content:center; align-items:center; background:#0f1f1c; color:#e9f6f3; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
@@ -25,82 +25,132 @@ button { margin-top:22px; padding:16px 36px; border-radius:999px; border:none; b
 </div>
 
 <script>
-let audioCtx, musicGain, musicNodes, voiceOsc, voiceGain;
+let audioCtx;
+let musicGain, musicNodes = [];
+let voiceOsc, voiceLFO, voiceGain;
+let sessionCount = 0;
 
 /* ---------- EMOTION SCAN ---------- */
 function scanEmotion(text){
-  const t=text.toLowerCase();
+  const t = text.toLowerCase();
   if(t.includes("sad")||t.includes("lonely")) return "comforting";
   if(t.includes("anxious")||t.includes("stress")||t.includes("panic")) return "soothing";
   if(t.includes("tired")||t.includes("sleep")) return "sleepy";
   return "calm";
 }
 
-/* ---------- GENERATE STORY ---------- */
+/* ---------- GENERATE STORY BASED ON EMOTION ---------- */
 function generateStory(emotion){
-  if(emotion==="comforting")
-    return "Take a slow breath. Gentle warmth surrounds you.";
-  if(emotion==="soothing")
-    return "Relax your body. Feel tension melt away.";
-  if(emotion==="sleepy")
-    return "Your body is ready to rest. Drift peacefully.";
-  return "Everything moves slowly. Let the world wait while you rest.";
+  // Generate a slightly different story every submission
+  const variations = {
+    comforting:[
+      "Take a slow breath. You are safe. Gentle warmth surrounds you.",
+      "Soft light fills your mind. Everything is okay.",
+      "Let your thoughts rest. Comfort is all around you."
+    ],
+    soothing:[
+      "Relax your body. Feel tension melt away.",
+      "Your breath moves slowly. Calm flows through you.",
+      "Each worry drifts away like a feather."
+    ],
+    sleepy:[
+      "Your body is ready to rest. Drift peacefully.",
+      "Feel your muscles loosen. Sleep is near.",
+      "Close your eyes and let gentle calm take over."
+    ],
+    calm:[
+      "Everything moves slowly. Let the world wait while you rest.",
+      "Soft sounds flow around you. Peace is here.",
+      "Embrace the gentle rhythm of stillness."
+    ]
+  };
+  
+  const choices = variations[emotion] || variations["calm"];
+  return choices[Math.floor(Math.random()*choices.length)];
 }
 
 /* ---------- START SESSION ---------- */
 function startCalm(){
-  document.getElementById("status").innerText="Creating calming music and soothing voice…";
-  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  sessionCount++;
+  document.getElementById("status").innerText = "Generating calming ambience and soothing voice…";
+  
+  const text = document.getElementById("textInput").value;
+  const emotion = scanEmotion(text);
+  const story = generateStory(emotion);
+
+  // Stop previous session if exists
+  if(audioCtx) audioCtx.close();
+  
+  // Start new audio context
+  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  
   generateMusic();
   generateVoice();
-
-  const text=document.getElementById("textInput").value;
-  const emotion=scanEmotion(text);
-  document.getElementById("status").innerText="Relaxing… enjoy the calming voice";
+  
+  // Display session info
+  document.getElementById("status").innerText = `Session #${sessionCount}: Enjoy your personalized calm.`;
 }
 
-/* ---------- CALM MUSIC ---------- */
+/* ---------- GENERATE CALM MUSIC (NEW AMBIENCE) ---------- */
 function generateMusic(){
-  musicGain=audioCtx.createGain();
-  musicGain.gain.value=0.04;
+  // Stop old music nodes
+  musicNodes.forEach(n=>n.stop());
+  musicNodes = [];
+
+  musicGain = audioCtx.createGain();
+  musicGain.gain.value = 0.04;
   musicGain.connect(audioCtx.destination);
-  musicNodes=[];
-  [110,138,165].forEach(f=>{
-    const osc=audioCtx.createOscillator();
-    osc.type="sine"; osc.frequency.value=f;
+
+  // Randomize base frequencies for new ambience
+  const baseFreqs = [100 + Math.random()*20, 130 + Math.random()*20, 160 + Math.random()*20];
+  baseFreqs.forEach(f=>{
+    const osc = audioCtx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.value = f;
     osc.connect(musicGain);
     osc.start();
     musicNodes.push(osc);
   });
 }
 
-/* ---------- SOOTHING VOICE (HUM-LIKE) ---------- */
+/* ---------- SOOTHING HUM/VOICE (NEW) ---------- */
 function generateVoice(){
-  voiceOsc=audioCtx.createOscillator();
-  voiceOsc.type="sawtooth";
-  voiceOsc.frequency.value=120; // base pitch
+  // Stop previous voice
+  if(voiceOsc) voiceOsc.stop();
+  if(voiceLFO) voiceLFO.stop();
 
-  const bandpass=audioCtx.createBiquadFilter();
-  bandpass.type="bandpass";
-  bandpass.frequency.value=700;
-  bandpass.Q.value=5;
+  // Base oscillator
+  voiceOsc = audioCtx.createOscillator();
+  voiceOsc.type = "sawtooth";
+  voiceOsc.frequency.value = 110 + Math.random()*30; // slight variation
 
-  const gain=audioCtx.createGain();
-  gain.gain.value=0.035;
+  // Bandpass filter for vocal-like timbre
+  const bandpass = audioCtx.createBiquadFilter();
+  bandpass.type = "bandpass";
+  bandpass.frequency.value = 700 + Math.random()*200;
+  bandpass.Q.value = 5;
 
-  // subtle vibrato
-  const lfo=audioCtx.createOscillator();
-  lfo.type="sine"; lfo.frequency.value=0.15;
-  const lfoGain=audioCtx.createGain();
-  lfoGain.gain.value=5;
-  lfo.connect(lfoGain).connect(voiceOsc.frequency);
+  // Gain
+  voiceGain = audioCtx.createGain();
+  voiceGain.gain.value = 0.035;
 
-  voiceOsc.connect(bandpass).connect(gain).connect(audioCtx.destination);
+  // Vibrato LFO
+  voiceLFO = audioCtx.createOscillator();
+  voiceLFO.type = "sine";
+  voiceLFO.frequency.value = 0.1 + Math.random()*0.1;
+  const lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = 5;
+  voiceLFO.connect(lfoGain).connect(voiceOsc.frequency);
 
+  // Connect nodes
+  voiceOsc.connect(bandpass).connect(voiceGain).connect(audioCtx.destination);
+
+  // Start voice
   voiceOsc.start();
-  lfo.start();
+  voiceLFO.start();
 
-  voiceOsc.stop(audioCtx.currentTime + 180); // 3-hour long session
+  // Automatically stop after ~2 minutes
+  voiceOsc.stop(audioCtx.currentTime + 120 + Math.random()*60);
 }
 </script>
 </body>
