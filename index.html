@@ -1,147 +1,171 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Lets take a break</title>
-  <meta name="description" content="AI-generated calming sound to reduce stress and anxiety">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body {
-      font-family: Sondra, sans-serif;
-      background: #fffff0;
-      text-align: center;
-      padding: 30px;
-    }
-    textarea {
-      width: 55%;
-      height: 120px;
-      font-size: 16px;
-      padding: 10px;
-    }
-    button {
-      margin-top: 15px;
-      padding: 15px 25px;
-      font-size: 24px;
-      border: none;
-      border-radius: 8px;
-      background: #fff8dc;
-      color: black;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #45a8a8;
-    }
-    p {
-      margin-top: 20px;
-      font-size: 16px;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>CalmMind AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+  margin: 0;
+  height: 100vh;
+  background: linear-gradient(180deg, #e6f2f1, #cfe8e6);
+  font-family: "Segoe UI", sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.container {
+  text-align: center;
+  width: 90%;
+  max-width: 420px;
+}
+
+.icon {
+  font-size: 90px;
+  margin-bottom: 20px;
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%   { transform: translateY(0px); }
+  50%  { transform: translateY(-18px); }
+  100% { transform: translateY(0px); }
+}
+
+textarea {
+  width: 100%;
+  height: 120px;
+  border-radius: 30px;
+  border: none;
+  padding: 20px;
+  font-size: 16px;
+  outline: none;
+  resize: none;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+button {
+  margin-top: 20px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 30px;
+  border: none;
+  background: #6bbfb8;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #58a9a3;
+}
+
+.status {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #335;
+}
+</style>
 </head>
 
-<!-- PayPal Buy Now Button -->
-<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
-  <input type="hidden" name="cmd" value="_xclick">
-  <input type="hidden" name="business" value="YOUR_PAYPAL_ACCOUNT">
-  <input type="hidden" name="item_name" value="Calm AI Premium">
-  <input type="hidden" name="amount" value="5.00">
-  <input type="hidden" name="currency_code" value="USD">
-  <input type="submit" value="Unlock Premium Calm AI" style="padding:15px 25px; font-size:18px; border:none; border-radius:8px; background:#fff8dc; color:black; cursor:pointer;">
-</form>
-
 <body>
-<h1>Lets take a break</h1>
-<p>Express yourself, let it all out.</p>
 
-<textarea id="feelings" placeholder="I feel anxious, stressed, overwhelmed..."></textarea>
-<br>
-<button onclick="startCalm()">Calm Me Down</button>
-<button onclick="stopCalm()">Stop</button>
+<div class="container">
+  <div class="icon" id="icon">🌿</div>
 
-<p id="status"></p>
+  <textarea id="feelings" placeholder="Tell me how you feel right now..."></textarea>
+
+  <button onclick="startSession()">Calm Me</button>
+
+  <div class="status" id="status"></div>
+</div>
 
 <script>
 let audioCtx;
-let birdInterval;
-let speaking = false;
+let noiseSource;
+let isActive = false;
 
-function startCalm() {
-  if (speaking) return;
-  speaking = true;
+// 🌿 Start calm session
+function startSession() {
+  if (isActive) return;
+  isActive = true;
 
   const text = document.getElementById("feelings").value.toLowerCase();
   const status = document.getElementById("status");
-  status.innerText = "The AI is gently telling you a calming story 🌿";
+  status.innerText = "The AI is gently speaking to you…";
 
-  // 🌿 Generate calming story
-  let story = "Take a slow breath. Imagine you are walking through a quiet forest. ";
+  // 🌙 Generate calming story
+  let story = "Take a slow breath. ";
+  story += "You are in a peaceful place where nothing is expected of you. ";
 
   if (text.includes("anxious") || text.includes("panic")) {
-    story += "The air feels safe and steady. Each step slows your thoughts, and your breathing becomes calm and even. ";
+    story += "Your thoughts begin to slow, and your breathing becomes steady and calm. ";
   } else if (text.includes("sad")) {
-    story += "Soft light filters through the trees, reminding you that peace is still close to you. ";
-  } else if (text.includes("sleep") || text.includes("tired")) {
-    story += "The ground beneath you is warm and comfortable, inviting your body to rest. ";
+    story += "Gentle warmth surrounds you, reminding you that you are not alone. ";
+  } else if (text.includes("tired") || text.includes("sleep")) {
+    story += "Your body feels heavy and relaxed, ready to rest deeply. ";
   } else {
-    story += "Everything around you moves gently, without pressure or expectation. ";
+    story += "Everything around you moves softly and without urgency. ";
   }
 
-  story += "You are safe. You are allowed to rest.";
+  story += "You are safe. You are allowed to relax.";
 
-  // 🗣️ AI Voice (Browser Speech)
-  const utterance = new SpeechSynthesisUtterance(story);
-  utterance.rate = 0.75;   // slow
-  utterance.pitch = 0.9;   // soft
-  utterance.volume = 1;
+  // 🗣️ AI Voice (built-in, human-like)
+  const speech = new SpeechSynthesisUtterance(story);
+  speech.rate = 0.75;
+  speech.pitch = 0.9;
+  speech.volume = 1;
 
-  speechSynthesis.speak(utterance);
+  speech.onend = () => {
+    status.innerText = "Now resting with calming nature sounds 🌲";
+    startNatureSound();
+  };
 
-  // 🐦 Bird sounds (procedural)
+  speechSynthesis.cancel();
+  speechSynthesis.speak(speech);
+}
+
+// 🌲 Procedural nature sound AFTER voice
+function startNatureSound() {
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-  birdInterval = setInterval(() => {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
+  const bufferSize = 2 * audioCtx.sampleRate;
+  const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = noiseBuffer.getChannelData(0);
 
-    osc.type = "sine";
-    osc.frequency.value = 1000 + Math.random() * 800;
-    gain.gain.value = 0.02;
+  let last = 0;
+  for (let i = 0; i < bufferSize; i++) {
+    const rnd = Math.random() * 2 - 1;
+    data[i] = (last + 0.02 * rnd) / 1.02;
+    last = data[i];
+  }
 
-    osc.connect(gain).connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.15);
-  }, 4000 + Math.random() * 3000); // random chirps
+  noiseSource = audioCtx.createBufferSource();
+  noiseSource.buffer = noiseBuffer;
+  noiseSource.loop = true;
+
+  const gain = audioCtx.createGain();
+  gain.gain.value = 0.08;
+
+  noiseSource.connect(gain).connect(audioCtx.destination);
+  noiseSource.start();
+
+  // stop after 3 hours
+  setTimeout(endSession, 10800000);
 }
 
-function stopCalm() {
+// 🌙 Stop everything
+function endSession() {
   speechSynthesis.cancel();
-  clearInterval(birdInterval);
+  if (noiseSource) noiseSource.stop();
   if (audioCtx) audioCtx.close();
-  speaking = false;
+  isActive = false;
   document.getElementById("status").innerText = "Session ended 🌙";
-}
-</script>
-
- } catch (e) {
-    status.innerText = "Sorry, your browser does not support audio generation.";
-    console.error(e);
-  }
-}
-
-function stopCalm() {
-  const status = document.getElementById("status");
-  if (oscillators.length > 0) {
-    oscillators.forEach(o => {
-      try { o.stop(); } catch(e){}
-    });
-    oscillators = [];
-  }
-  if (audioCtx) {
-    try { audioCtx.close(); } catch(e){}
-  }
-  status.innerText = "Session stopped 🌙 You did great!";
-  isPlaying = false;
 }
 </script>
 
 </body>
 </html>
-
