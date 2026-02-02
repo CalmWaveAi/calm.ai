@@ -98,12 +98,12 @@ function startCalm() {
     const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const output = noiseBuffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) output[i] = (Math.random() * 2 - 1) * 0.02;
-    const whiteNoise = audioCtx.createBufferSource();
-    whiteNoise.buffer = noiseBuffer;
-    whiteNoise.loop = true;
-    whiteNoise.connect(masterGain);
-    whiteNoise.start();
-    oscillators.push(whiteNoise);
+    const campfire = audioCtx.createBufferSource();
+   campfire.buffer = noiseBuffer;
+    campfire.loop = true;
+    campfire.connect(masterGain);
+    campfire.start();
+    oscillators.push(campfire);
 
     // Stop after 1 hour automatically
     setTimeout(stopCalm, 3600000);
