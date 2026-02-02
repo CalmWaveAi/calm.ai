@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Dynamic Calm AI</title>
+<title>Dynamic Calm AI with Human-like Voice</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body { margin:0; height:100vh; display:flex; justify-content:center; align-items:center; background:#0f1f1c; color:#e9f6f3; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
@@ -41,10 +41,9 @@ function scanEmotion(text){
 
 /* ---------- GENERATE STORY BASED ON EMOTION ---------- */
 function generateStory(emotion){
-  // Generate a slightly different story every submission
   const variations = {
     comforting:[
-      "Take a slow breath. You are safe. Gentle warmth surrounds you.",
+      "Take a slow breath. Gentle warmth surrounds you.",
       "Soft light fills your mind. Everything is okay.",
       "Let your thoughts rest. Comfort is all around you."
     ],
@@ -64,7 +63,6 @@ function generateStory(emotion){
       "Embrace the gentle rhythm of stillness."
     ]
   };
-  
   const choices = variations[emotion] || variations["calm"];
   return choices[Math.floor(Math.random()*choices.length)];
 }
@@ -73,25 +71,24 @@ function generateStory(emotion){
 function startCalm(){
   sessionCount++;
   document.getElementById("status").innerText = "Generating calming ambience and soothing voice…";
-  
+
   const text = document.getElementById("textInput").value;
   const emotion = scanEmotion(text);
   const story = generateStory(emotion);
 
   // Stop previous session if exists
   if(audioCtx) audioCtx.close();
-  
+
   // Start new audio context
   audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  
+
   generateMusic();
-  generateVoice();
-  
-  // Display session info
+  generateProceduralVoice(story);
+
   document.getElementById("status").innerText = `Session #${sessionCount}: Enjoy your personalized calm.`;
 }
 
-/* ---------- GENERATE CALM MUSIC (NEW AMBIENCE) ---------- */
+/* ---------- GENERATE AMBIENT MUSIC ---------- */
 function generateMusic(){
   // Stop old music nodes
   musicNodes.forEach(n=>n.stop());
@@ -101,7 +98,6 @@ function generateMusic(){
   musicGain.gain.value = 0.04;
   musicGain.connect(audioCtx.destination);
 
-  // Randomize base frequencies for new ambience
   const baseFreqs = [100 + Math.random()*20, 130 + Math.random()*20, 160 + Math.random()*20];
   baseFreqs.forEach(f=>{
     const osc = audioCtx.createOscillator();
@@ -113,44 +109,31 @@ function generateMusic(){
   });
 }
 
-/* ---------- SOOTHING HUM/VOICE (NEW) ---------- */
-function generateVoice(){
-  // Stop previous voice
-  if(voiceOsc) voiceOsc.stop();
-  if(voiceLFO) voiceLFO.stop();
+/* ---------- PROCEDURAL HUMAN-LIKE VOICE ---------- */
+function generateProceduralVoice(text){
+  // Convert text into a vowel-focused melody sequence
+  const vowels = ['a','e','i','o','u'];
+  const letters = text.toLowerCase().replace(/[^aeiou ]/g,'').split('');
+  let time = audioCtx.currentTime;
 
-  // Base oscillator
-  voiceOsc = audioCtx.createOscillator();
-  voiceOsc.type = "sawtooth";
-  voiceOsc.frequency.value = 110 + Math.random()*30; // slight variation
+  const voiceGainNode = audioCtx.createGain();
+  voiceGainNode.gain.value = 0.04;
+  voiceGainNode.connect(audioCtx.destination);
 
-  // Bandpass filter for vocal-like timbre
-  const bandpass = audioCtx.createBiquadFilter();
-  bandpass.type = "bandpass";
-  bandpass.frequency.value = 700 + Math.random()*200;
-  bandpass.Q.value = 5;
-
-  // Gain
-  voiceGain = audioCtx.createGain();
-  voiceGain.gain.value = 0.035;
-
-  // Vibrato LFO
-  voiceLFO = audioCtx.createOscillator();
-  voiceLFO.type = "sine";
-  voiceLFO.frequency.value = 0.1 + Math.random()*0.1;
-  const lfoGain = audioCtx.createGain();
-  lfoGain.gain.value = 5;
-  voiceLFO.connect(lfoGain).connect(voiceOsc.frequency);
-
-  // Connect nodes
-  voiceOsc.connect(bandpass).connect(voiceGain).connect(audioCtx.destination);
-
-  // Start voice
-  voiceOsc.start();
-  voiceLFO.start();
-
-  // Automatically stop after ~2 minutes
-  voiceOsc.stop(audioCtx.currentTime + 120 + Math.random()*60);
+  letters.forEach((l, i)=>{
+    if(l === ' ') time += 0.15; // small pause for spaces
+    else {
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sawtooth';
+      // Map vowels to pitch for natural variation
+      let freqMap = {a:220,e:250,i:280,o:200,u:180};
+      osc.frequency.value = freqMap[l] + (Math.random()*10 - 5); // small detune
+      osc.connect(voiceGainNode);
+      osc.start(time);
+      osc.stop(time + 0.35); // each vowel ~0.35s
+      time += 0.35;
+    }
+  });
 }
 </script>
 </body>
