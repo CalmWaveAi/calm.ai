@@ -60,89 +60,67 @@
 
 <script>
 let audioCtx;
-let masterGain;
-let sources = [];
-let isPlaying = false;
+let birdInterval;
+let speaking = false;
 
 function startCalm() {
-  if (isPlaying) return;
+  if (speaking) return;
+  speaking = true;
+
   const text = document.getElementById("feelings").value.toLowerCase();
   const status = document.getElementById("status");
-  status.innerText = "Nature AI is creating a calm space for you 🌿";
+  status.innerText = "The AI is gently telling you a calming story 🌿";
 
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  masterGain = audioCtx.createGain();
-  masterGain.gain.value = 0.08;
-  masterGain.connect(audioCtx.destination);
+  // 🌿 Generate calming story
+  let story = "Take a slow breath. Imagine you are walking through a quiet forest. ";
 
-  // 🌊 WIND / OCEAN (low frequency movement)
-  const windOsc = audioCtx.createOscillator();
-  windOsc.type = "sine";
-  windOsc.frequency.value = 0.08; // very slow
-  const windGain = audioCtx.createGain();
-  windGain.gain.value = 0.5;
-  windOsc.connect(windGain).connect(masterGain);
-  windOsc.start();
-  sources.push(windOsc);
-
-  // 🌧️ RAIN / LEAVES (pink-ish noise)
-  const bufferSize = 2 * audioCtx.sampleRate;
-  const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const output = noiseBuffer.getChannelData(0);
-  let last = 0;
-  for (let i = 0; i < bufferSize; i++) {
-    const rnd = Math.random() * 2 - 1;
-    output[i] = (last + 0.02 * rnd) / 1.02;
-    last = output[i];
-  }
-  const rain = audioCtx.createBufferSource();
-  rain.buffer = noiseBuffer;
-  rain.loop = true;
-  const rainGain = audioCtx.createGain();
-  rainGain.gain.value = 0.15;
-  rain.connect(rainGain).connect(masterGain);
-  rain.start();
-  sources.push(rain);
-
-  // 🌲 BREATHING MOTION (slow volume waves)
-  const lfo = audioCtx.createOscillator();
-  lfo.type = "sine";
-  lfo.frequency.value = 0.04;
-  const lfoGain = audioCtx.createGain();
-  lfoGain.gain.value = 0.03;
-  lfo.connect(lfoGain).connect(masterGain.gain);
-  lfo.start();
-  sources.push(lfo);
-
-  // Mood adjustments
   if (text.includes("anxious") || text.includes("panic")) {
-    masterGain.gain.value = 0.06;
-    lfo.frequency.value = 0.03;
-  }
-  if (text.includes("sleep") || text.includes("tired")) {
-    masterGain.gain.value = 0.05;
-    lfo.frequency.value = 0.02;
+    story += "The air feels safe and steady. Each step slows your thoughts, and your breathing becomes calm and even. ";
+  } else if (text.includes("sad")) {
+    story += "Soft light filters through the trees, reminding you that peace is still close to you. ";
+  } else if (text.includes("sleep") || text.includes("tired")) {
+    story += "The ground beneath you is warm and comfortable, inviting your body to rest. ";
+  } else {
+    story += "Everything around you moves gently, without pressure or expectation. ";
   }
 
-  isPlaying = true;
+  story += "You are safe. You are allowed to rest.";
 
-  setTimeout(stopCalm, 10800000); // 3 hours
+  // 🗣️ AI Voice (Browser Speech)
+  const utterance = new SpeechSynthesisUtterance(story);
+  utterance.rate = 0.75;   // slow
+  utterance.pitch = 0.9;   // soft
+  utterance.volume = 1;
+
+  speechSynthesis.speak(utterance);
+
+  // 🐦 Bird sounds (procedural)
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  birdInterval = setInterval(() => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.value = 1000 + Math.random() * 800;
+    gain.gain.value = 0.02;
+
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.15);
+  }, 4000 + Math.random() * 3000); // random chirps
 }
 
 function stopCalm() {
-  sources.forEach(src => { try { src.stop(); } catch(e) {} });
-  sources = [];
+  speechSynthesis.cancel();
+  clearInterval(birdInterval);
   if (audioCtx) audioCtx.close();
-  isPlaying = false;
+  speaking = false;
   document.getElementById("status").innerText = "Session ended 🌙";
 }
 </script>
 
-    // Stop after 1 hour automatically
-    setTimeout(stopCalm, 3600000);
-    isPlaying = true;
-
-  } catch (e) {
+ } catch (e) {
     status.innerText = "Sorry, your browser does not support audio generation.";
     console.error(e);
   }
