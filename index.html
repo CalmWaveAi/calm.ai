@@ -2,15 +2,28 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Dynamic Calm AI with Human-like Voice</title>
+<title>Calm AI</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { margin:0; height:100vh; display:flex; justify-content:center; align-items:center; background:#0f1f1c; color:#e9f6f3; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
-.app { width:90%; max-width:900px; background:rgba(255,255,255,0.08); border-radius:28px; padding:36px; backdrop-filter:blur(20px);}
-textarea { width:100%; height:140px; border-radius:22px; border:none; padding:18px; background:rgba(255,255,255,.15); color:#e9f6f3; resize:none;}
-button { margin-top:22px; padding:16px 36px; border-radius:999px; border:none; background:#6fd3c4; font-size:17px; color:#06332c; cursor:pointer;}
+body {
+  margin:0; height:100vh; display:flex; justify-content:center; align-items:center;
+  background:#0f1f1c; color:#e9f6f3; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.app {
+  width:90%; max-width:900px; background:rgba(255,255,255,0.08); border-radius:28px; padding:36px; backdrop-filter:blur(20px);
+}
+textarea {
+  width:100%; height:140px; border-radius:22px; border:none; padding:18px; background:rgba(255,255,255,.15); color:#e9f6f3; resize:none;
+}
+button {
+  margin-top:22px; padding:16px 36px; border-radius:999px; border:none; background:#6fd3c4; font-size:17px; color:#06332c; cursor:pointer;
+}
 .status { margin-top:16px; font-size:14px; color:#a8cfc7; }
-.orb { width:140px; height:140px; margin:0 auto 30px; border-radius:50%; background:radial-gradient(circle at top,#a7fff1,#4fbfb0); animation:drift 10s ease-in-out infinite; box-shadow:0 0 80px rgba(111,211,196,.6);}
+.orb {
+  width:140px; height:140px; margin:0 auto 30px; border-radius:50%;
+  background:radial-gradient(circle at top,#a7fff1,#4fbfb0);
+  animation:drift 10s ease-in-out infinite; box-shadow:0 0 80px rgba(111,211,196,.6);
+}
 @keyframes drift {0%{transform:translateY(0)}50%{transform:translateY(-14px)}100%{transform:translateY(0)}}
 </style>
 </head>
@@ -27,7 +40,6 @@ button { margin-top:22px; padding:16px 36px; border-radius:999px; border:none; b
 <script>
 let audioCtx;
 let musicGain, musicNodes = [];
-let voiceOsc, voiceLFO, voiceGain;
 let sessionCount = 0;
 
 /* ---------- EMOTION SCAN ---------- */
@@ -39,7 +51,7 @@ function scanEmotion(text){
   return "calm";
 }
 
-/* ---------- GENERATE STORY BASED ON EMOTION ---------- */
+/* ---------- GENERATE STORY ---------- */
 function generateStory(emotion){
   const variations = {
     comforting:[
@@ -70,7 +82,7 @@ function generateStory(emotion){
 /* ---------- START SESSION ---------- */
 function startCalm(){
   sessionCount++;
-  document.getElementById("status").innerText = "Generating calming ambience and soothing voice…";
+  document.getElementById("status").innerText = "Generating soft ambience and soothing voice…";
 
   const text = document.getElementById("textInput").value;
   const emotion = scanEmotion(text);
@@ -79,27 +91,25 @@ function startCalm(){
   // Stop previous session if exists
   if(audioCtx) audioCtx.close();
 
-  // Start new audio context
   audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-
   generateMusic();
-  generateProceduralVoice(story);
+  speakStory(story);
 
   document.getElementById("status").innerText = `Session #${sessionCount}: Enjoy your personalized calm.`;
 }
 
-/* ---------- GENERATE AMBIENT MUSIC ---------- */
+/* ---------- GENERATE SOFT AMBIENT MUSIC ---------- */
 function generateMusic(){
-  // Stop old music nodes
-  musicNodes.forEach(n=>n.stop());
+  musicNodes.forEach(n=>n.stop?.());
   musicNodes = [];
 
   musicGain = audioCtx.createGain();
-  musicGain.gain.value = 0.04;
+  musicGain.gain.value = 0.03; // soft ambience
   musicGain.connect(audioCtx.destination);
 
-  const baseFreqs = [100 + Math.random()*20, 130 + Math.random()*20, 160 + Math.random()*20];
-  baseFreqs.forEach(f=>{
+  // Randomized soft sine waves
+  const freqs = [100 + Math.random()*20, 140 + Math.random()*20, 180 + Math.random()*20];
+  freqs.forEach(f=>{
     const osc = audioCtx.createOscillator();
     osc.type = "sine";
     osc.frequency.value = f;
@@ -109,31 +119,26 @@ function generateMusic(){
   });
 }
 
-/* ---------- PROCEDURAL HUMAN-LIKE VOICE ---------- */
-function generateProceduralVoice(text){
-  // Convert text into a vowel-focused melody sequence
-  const vowels = ['a','e','i','o','u'];
-  const letters = text.toLowerCase().replace(/[^aeiou ]/g,'').split('');
-  let time = audioCtx.currentTime;
+/* ---------- SOOTHING VOICE USING SPEECHSYNTHESIS ---------- */
+function speakStory(text){
+  const utter = new SpeechSynthesisUtterance(text);
 
-  const voiceGainNode = audioCtx.createGain();
-  voiceGainNode.gain.value = 0.04;
-  voiceGainNode.connect(audioCtx.destination);
+  const voices = speechSynthesis.getVoices();
+  const calmVoice = voices.find(v => v.lang.startsWith("en") && v.name.toLowerCase().includes("female"));
+  if(calmVoice) utter.voice = calmVoice;
 
-  letters.forEach((l, i)=>{
-    if(l === ' ') time += 0.15; // small pause for spaces
-    else {
-      const osc = audioCtx.createOscillator();
-      osc.type = 'sawtooth';
-      // Map vowels to pitch for natural variation
-      let freqMap = {a:220,e:250,i:280,o:200,u:180};
-      osc.frequency.value = freqMap[l] + (Math.random()*10 - 5); // small detune
-      osc.connect(voiceGainNode);
-      osc.start(time);
-      osc.stop(time + 0.35); // each vowel ~0.35s
-      time += 0.35;
-    }
-  });
+  utter.rate = 0.75; // slower, soothing
+  utter.pitch = 0.9; // gentle tone
+  utter.volume = 0.85;
+
+  // Duck music while speaking
+  musicGain.gain.value = 0.015;
+  utter.onend = ()=>{
+    musicGain.gain.value = 0.03;
+    document.getElementById("status").innerText = "Relaxing… music continues";
+  };
+
+  speechSynthesis.speak(utter);
 }
 </script>
 </body>
