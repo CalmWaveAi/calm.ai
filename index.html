@@ -7,114 +7,103 @@
 
 <style>
 :root {
-  --bg: #0f1f1c;
-  --card: rgba(255,255,255,0.08);
-  --text: #e9f6f3;
-  --muted: #a8cfc7;
-  --accent: #6fd3c4;
+  --bg:#0f1f1c;
+  --card:rgba(255,255,255,0.08);
+  --text:#e9f6f3;
+  --muted:#a8cfc7;
+  --accent:#6fd3c4;
 }
 
-* { box-sizing: border-box; }
-
 body {
-  margin: 0;
-  height: 100vh;
-  background: radial-gradient(circle at top, #1a3a34, var(--bg));
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: var(--text);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  margin:0;
+  height:100vh;
+  background:radial-gradient(circle at top,#1a3a34,var(--bg));
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:var(--text);
+  display:flex;
+  justify-content:center;
+  align-items:center;
 }
 
 .app {
-  width: 92%;
-  max-width: 900px;
-  background: var(--card);
-  border-radius: 28px;
-  padding: 40px;
-  box-shadow: 0 40px 120px rgba(0,0,0,0.4);
-  backdrop-filter: blur(20px);
+  width:94%;
+  max-width:900px;
+  background:var(--card);
+  border-radius:28px;
+  padding:36px;
+  backdrop-filter:blur(20px);
+  box-shadow:0 40px 120px rgba(0,0,0,.45);
 }
 
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
 
-.logo {
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+.logo { font-size:22px; font-weight:600; }
+
+.controls {
+  display:flex;
+  gap:12px;
+}
+
+select,button.toggle {
+  background:rgba(255,255,255,.15);
+  border:none;
+  border-radius:999px;
+  padding:10px 16px;
+  color:var(--text);
 }
 
 .hero {
-  margin-top: 50px;
-  text-align: center;
+  text-align:center;
+  margin-top:40px;
 }
 
 .orb {
-  width: 140px;
-  height: 140px;
-  margin: 0 auto 30px;
-  border-radius: 50%;
-  background: radial-gradient(circle at top, #a7fff1, #4fbfb0);
-  animation: drift 10s ease-in-out infinite;
-  box-shadow: 0 0 80px rgba(111,211,196,0.6);
+  width:140px;
+  height:140px;
+  margin:0 auto 30px;
+  border-radius:50%;
+  background:radial-gradient(circle at top,#a7fff1,#4fbfb0);
+  animation:drift 10s ease-in-out infinite;
+  box-shadow:0 0 80px rgba(111,211,196,.6);
 }
 
 @keyframes drift {
-  0% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-14px) scale(1.05); }
-  100% { transform: translateY(0) scale(1); }
-}
-
-h1 {
-  font-size: 34px;
-  font-weight: 500;
-}
-
-p {
-  color: var(--muted);
-  max-width: 520px;
-  margin: 15px auto 40px;
+  0%{transform:translateY(0)}
+  50%{transform:translateY(-14px)}
+  100%{transform:translateY(0)}
 }
 
 textarea {
-  width: 100%;
-  max-width: 520px;
-  height: 140px;
-  border-radius: 22px;
-  border: none;
-  padding: 18px;
-  font-size: 16px;
-  resize: none;
-  outline: none;
-  background: rgba(255,255,255,0.15);
-  color: var(--text);
+  width:100%;
+  max-width:520px;
+  height:160px;
+  border-radius:22px;
+  border:none;
+  padding:18px;
+  background:rgba(255,255,255,.15);
+  color:var(--text);
+  resize:none;
 }
 
-button {
-  margin-top: 25px;
-  padding: 16px 34px;
-  border-radius: 999px;
-  border: none;
-  background: var(--accent);
-  font-size: 17px;
-  font-weight: 500;
-  cursor: pointer;
-  color: #06332c;
-}
-
-button:hover {
-  opacity: 0.9;
+button.main {
+  margin-top:22px;
+  padding:16px 36px;
+  border-radius:999px;
+  border:none;
+  background:var(--accent);
+  font-size:17px;
+  color:#06332c;
+  cursor:pointer;
 }
 
 .status {
-  margin-top: 18px;
-  font-size: 14px;
-  color: var(--muted);
+  margin-top:16px;
+  font-size:14px;
+  color:var(--muted);
 }
 </style>
 </head>
@@ -124,99 +113,98 @@ button:hover {
 <div class="app">
   <div class="header">
     <div class="logo">Calm AI</div>
+    <div class="controls">
+      <select id="voiceStyle">
+        <option value="soft">Soft</option>
+        <option value="calm">Calm</option>
+        <option value="deep">Deep</option>
+      </select>
+      <button class="toggle" onclick="toggleNight()">🌙</button>
+    </div>
   </div>
 
   <div class="hero">
     <div class="orb"></div>
-
     <h1>Let the story carry you</h1>
-    <p>
-      AI-generated music with a calm, smooth voice reading gently — designed
-      to slow your breathing and quiet your mind.
-    </p>
 
-    <textarea id="textInput" placeholder="Paste a calming book passage or story here…"></textarea>
+    <textarea id="text">
+Paste a calming story here.
+Use --- to separate chapters.
+    </textarea>
 
     <br>
-    <button onclick="startSession()">Begin Calm</button>
-
+    <button class="main" onclick="start()">Begin Calm</button>
     <div class="status" id="status"></div>
   </div>
 </div>
 
 <script>
-let audioCtx;
-let musicNodes = [];
-let speaking = false;
+let ctx, musicGain;
+let chapters=[], chapterIndex=0;
 
-/* ---------- START ---------- */
-function startSession() {
-  if (speaking) return;
-  speaking = true;
-
-  document.getElementById("status").innerText =
-    "Generating calming music and voice…";
-
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function start(){
+  ctx=new AudioContext();
   generateMusic();
-  speakText();
+  chapters=document.getElementById("text").value.split('---');
+  chapterIndex=0;
+  readChapter();
 }
 
-/* ---------- CALM MUSIC GENERATION ---------- */
-function generateMusic() {
-  const baseFreqs = [110, 138, 165]; // calm harmonic base
+/* 🎵 MUSIC */
+function generateMusic(){
+  musicGain=ctx.createGain();
+  musicGain.gain.value=.04;
+  musicGain.connect(ctx.destination);
 
-  baseFreqs.forEach(freq => {
-    const osc = audioCtx.createOscillator();
-    osc.type = "sine";
-    osc.frequency.value = freq;
-
-    const gain = audioCtx.createGain();
-    gain.gain.value = 0.03;
-
-    const lfo = audioCtx.createOscillator();
-    lfo.frequency.value = 0.05;
-
-    const lfoGain = audioCtx.createGain();
-    lfoGain.gain.value = 0.01;
-
-    lfo.connect(lfoGain).connect(gain.gain);
-    osc.connect(gain).connect(audioCtx.destination);
-
-    osc.start();
-    lfo.start();
-
-    musicNodes.push(osc, lfo);
+  [110,138,165].forEach(f=>{
+    const o=ctx.createOscillator();
+    o.type="sine"; o.frequency.value=f;
+    o.connect(musicGain);
+    o.start();
   });
 }
 
-/* ---------- SMOOTH VOCAL READING ---------- */
-function speakText() {
-  const text =
-    document.getElementById("textInput").value ||
-    "Take a slow breath. The world does not need anything from you right now. Just rest here.";
+/* 🎙 VOICE WITH PACING */
+function readChapter(){
+  if(chapterIndex>=chapters.length){
+    document.getElementById("status").innerText="Session complete 🌙";
+    return;
+  }
 
-  const utter = new SpeechSynthesisUtterance(text);
+  const sentences=chapters[chapterIndex].match(/[^.!?]+[.!?]/g);
+  let i=0;
 
-  const voices = speechSynthesis.getVoices();
-  const calmVoice = voices.find(v =>
-    v.lang.startsWith("en") && v.name.toLowerCase().includes("female")
-  );
+  function speakNext(){
+    if(!sentences||i>=sentences.length){
+      chapterIndex++;
+      setTimeout(readChapter,2000);
+      return;
+    }
 
-  if (calmVoice) utter.voice = calmVoice;
+    const u=new SpeechSynthesisUtterance(sentences[i++]);
+    const style=document.getElementById("voiceStyle").value;
 
-  utter.rate = 0.8;
-  utter.pitch = 0.9;
-  utter.volume = 0.8;
+    u.rate= style==="deep"?0.7:style==="soft"?0.85:0.8;
+    u.pitch= style==="deep"?0.8:1;
+    u.volume=.9;
 
-  utter.onend = () => {
-    document.getElementById("status").innerText =
-      "The story has ended. Music continues…";
-  };
+    musicGain.gain.value=.015;
+    u.onend=()=>{
+      musicGain.gain.value=.04;
+      setTimeout(speakNext,1200);
+    };
+    speechSynthesis.speak(u);
+  }
+  speakNext();
+}
 
-  speechSynthesis.speak(utter);
+/* 🌙 NIGHT MODE */
+function toggleNight(){
+  document.body.style.filter=
+    document.body.style.filter?"":"brightness(.75)";
 }
 </script>
 
 </body>
 </html>
+
