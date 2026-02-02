@@ -61,49 +61,82 @@
 <script>
 let audioCtx;
 let masterGain;
+let sources = [];
 let isPlaying = false;
-let oscillators = [];
 
 function startCalm() {
-  if (isPlaying) return; // prevent multiple starts
+  if (isPlaying) return;
   const text = document.getElementById("feelings").value.toLowerCase();
   const status = document.getElementById("status");
-  status.innerText = "Calm down,take deep breaths.";
+  status.innerText = "Nature AI is creating a calm space for you 🌿";
 
-  try {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    masterGain = audioCtx.createGain();
-    masterGain.gain.value = 0.05; // soft volume
-    masterGain.connect(audioCtx.destination);
-    
-    // Decide base frequency depending on mood
-    let baseFreq = 80; // default
-    if (text.includes("anxious") || text.includes("panic")) baseFreq = 60;
-    if (text.includes("sad") || text.includes("depressed")) baseFreq = 70;
-    if (text.includes("angry") || text.includes("frustrated")) baseFreq = 90;
-    if (text.includes("tired") || text.includes("sleep")) baseFreq = 40;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.08;
+  masterGain.connect(audioCtx.destination);
 
-    // Create multiple oscillators for a more natural sound
-    for (let i = 0; i < 3; i++) {
-      const osc = audioCtx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.value = baseFreq + Math.random() * 10; // slight variation
-      osc.connect(masterGain);
-      osc.start();
-      oscillators.push(osc);
-    }
+  // 🌊 WIND / OCEAN (low frequency movement)
+  const windOsc = audioCtx.createOscillator();
+  windOsc.type = "sine";
+  windOsc.frequency.value = 0.08; // very slow
+  const windGain = audioCtx.createGain();
+  windGain.gain.value = 0.5;
+  windOsc.connect(windGain).connect(masterGain);
+  windOsc.start();
+  sources.push(windOsc);
 
-    // Create gentle noise for texture
-    const bufferSize = 2 * audioCtx.sampleRate;
-    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const output = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) output[i] = (Math.random() * 2 - 1) * 0.02;
-    const campfire = audioCtx.createBufferSource();
-   campfire.buffer = noiseBuffer;
-    campfire.loop = true;
-    campfire.connect(masterGain);
-    campfire.start();
-    oscillators.push(campfire);
+  // 🌧️ RAIN / LEAVES (pink-ish noise)
+  const bufferSize = 2 * audioCtx.sampleRate;
+  const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const output = noiseBuffer.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < bufferSize; i++) {
+    const rnd = Math.random() * 2 - 1;
+    output[i] = (last + 0.02 * rnd) / 1.02;
+    last = output[i];
+  }
+  const rain = audioCtx.createBufferSource();
+  rain.buffer = noiseBuffer;
+  rain.loop = true;
+  const rainGain = audioCtx.createGain();
+  rainGain.gain.value = 0.15;
+  rain.connect(rainGain).connect(masterGain);
+  rain.start();
+  sources.push(rain);
+
+  // 🌲 BREATHING MOTION (slow volume waves)
+  const lfo = audioCtx.createOscillator();
+  lfo.type = "sine";
+  lfo.frequency.value = 0.04;
+  const lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = 0.03;
+  lfo.connect(lfoGain).connect(masterGain.gain);
+  lfo.start();
+  sources.push(lfo);
+
+  // Mood adjustments
+  if (text.includes("anxious") || text.includes("panic")) {
+    masterGain.gain.value = 0.06;
+    lfo.frequency.value = 0.03;
+  }
+  if (text.includes("sleep") || text.includes("tired")) {
+    masterGain.gain.value = 0.05;
+    lfo.frequency.value = 0.02;
+  }
+
+  isPlaying = true;
+
+  setTimeout(stopCalm, 10800000); // 3 hours
+}
+
+function stopCalm() {
+  sources.forEach(src => { try { src.stop(); } catch(e) {} });
+  sources = [];
+  if (audioCtx) audioCtx.close();
+  isPlaying = false;
+  document.getElementById("status").innerText = "Session ended 🌙";
+}
+</script>
 
     // Stop after 1 hour automatically
     setTimeout(stopCalm, 3600000);
