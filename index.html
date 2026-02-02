@@ -2,172 +2,196 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Calm AI - Human-like Voice</title>
+<title>Calm AI</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body {
-  margin:0; height:100vh; display:flex; justify-content:center; align-items:center;
-  background:#0f1f1c; color:#e9f6f3; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  margin:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#0f1f1c;
+  color:#e9f6f3;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 .app {
-  width:90%; max-width:900px; background:rgba(255,255,255,0.08); border-radius:28px; padding:36px; backdrop-filter:blur(20px);
+  width:90%;
+  max-width:900px;
+  background:rgba(255,255,255,0.08);
+  border-radius:28px;
+  padding:36px;
+  backdrop-filter:blur(20px);
 }
 textarea {
-  width:100%; height:140px; border-radius:22px; border:none; padding:18px; background:rgba(255,255,255,.15); color:#e9f6f3; resize:none;
+  width:100%;
+  height:140px;
+  border-radius:22px;
+  border:none;
+  padding:18px;
+  background:rgba(255,255,255,.15);
+  color:#e9f6f3;
+  resize:none;
 }
-button { margin-top:22px; padding:16px 36px; border-radius:999px; border:none; background:#6fd3c4; font-size:17px; color:#06332c; cursor:pointer;}
-.status { margin-top:16px; font-size:14px; color:#a8cfc7; }
-.orb { width:140px; height:140px; margin:0 auto 30px; border-radius:50%;
+button {
+  margin-top:22px;
+  padding:16px 36px;
+  border-radius:999px;
+  border:none;
+  background:#6fd3c4;
+  font-size:17px;
+  color:#06332c;
+  cursor:pointer;
+}
+.status {
+  margin-top:16px;
+  font-size:14px;
+  color:#a8cfc7;
+}
+.orb {
+  width:140px;
+  height:140px;
+  margin:0 auto 30px;
+  border-radius:50%;
   background:radial-gradient(circle at top,#a7fff1,#4fbfb0);
-  animation:drift 10s ease-in-out infinite; box-shadow:0 0 80px rgba(111,211,196,.6);}
-@keyframes drift {0%{transform:translateY(0)}50%{transform:translateY(-14px)}100%{transform:translateY(0)}}
+  animation:drift 10s ease-in-out infinite;
+  box-shadow:0 0 80px rgba(111,211,196,.6);
+}
+@keyframes drift {
+  0%{transform:translateY(0)}
+  50%{transform:translateY(-14px)}
+  100%{transform:translateY(0)}
+}
 </style>
 </head>
 <body>
+
 <div class="app">
   <div class="orb"></div>
   <h1>Relax and Let Go</h1>
-  <textarea id="textInput" placeholder="Describe your current feeling…"></textarea>
+  <textarea id="textInput" placeholder="Describe how you're feeling…"></textarea>
   <br>
-  <button onclick="startCalm()">Begin Calm</button>
+  <button id="startBtn">Begin Calm</button>
   <div class="status" id="status"></div>
 </div>
 
 <script>
 let audioCtx;
-let musicGain, musicNodes = [];
-let humGain, humOsc, humLFO;
-let sessionCount = 0;
+let musicGain;
+let breathInterval;
 
-/* ---------- EMOTION SCAN ---------- */
-function scanEmotion(text){
+/* ---------- EMOTION ---------- */
+function detectEmotion(text){
   const t = text.toLowerCase();
-  if(t.includes("sad")||t.includes("lonely")) return "comforting";
-  if(t.includes("anxious")||t.includes("stress")||t.includes("panic")) return "soothing";
-  if(t.includes("tired")||t.includes("sleep")) return "sleepy";
+  if(t.includes("sad") || t.includes("lonely")) return "comfort";
+  if(t.includes("anxious") || t.includes("stress")) return "soothing";
+  if(t.includes("sleep") || t.includes("tired")) return "sleepy";
   return "calm";
 }
 
-/* ---------- GENERATE STORY (for reference, not spoken) ---------- */
+/* ---------- STORY ---------- */
 function generateStory(emotion){
-  const variations = {
-    comforting:[
-      "Take a slow breath. Gentle warmth surrounds you.",
-      "Soft light fills your mind. Everything is okay.",
-      "Let your thoughts rest. Comfort is all around you."
+  const map = {
+    comfort: [
+      "Take a slow breath. You are safe. You are supported.",
+      "Gentle warmth surrounds you. Nothing is required of you right now."
     ],
-    soothing:[
-      "Relax your body. Feel tension melt away.",
-      "Your breath moves slowly. Calm flows through you.",
-      "Each worry drifts away like a feather."
+    soothing: [
+      "Let your shoulders soften. Each breath releases tension.",
+      "The world slows down. You can rest here."
     ],
-    sleepy:[
-      "Your body is ready to rest. Drift peacefully.",
-      "Feel your muscles loosen. Sleep is near.",
-      "Close your eyes and let gentle calm take over."
+    sleepy: [
+      "Your body feels heavy and relaxed. Sleep comes easily.",
+      "Every breath carries you deeper into rest."
     ],
-    calm:[
-      "Everything moves slowly. Let the world wait while you rest.",
-      "Soft sounds flow around you. Peace is here.",
-      "Embrace the gentle rhythm of stillness."
+    calm: [
+      "Everything is quiet. Peace flows gently through you.",
+      "There is nothing to fix. Simply be."
     ]
   };
-  const choices = variations[emotion] || variations["calm"];
-  return choices[Math.floor(Math.random()*choices.length)];
+  const arr = map[emotion];
+  return arr[Math.floor(Math.random()*arr.length)];
 }
 
-/* ---------- START SESSION ---------- */
-function startCalm(){
-  sessionCount++;
-  document.getElementById("status").innerText = "Generating soft ambience and human-like voice…";
+/* ---------- START ---------- */
+document.getElementById("startBtn").onclick = () => {
+  if(audioCtx) audioCtx.close();
+  clearInterval(breathInterval);
 
-  const text = document.getElementById("textInput").value;
-  const emotion = scanEmotion(text);
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  playAmbience();
+
+  const emotion = detectEmotion(textInput.value);
   const story = generateStory(emotion);
 
-  // Stop previous session
-  if(audioCtx) audioCtx.close();
+  speakWithBreaths(story);
 
-  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  generateMusic();
-  generateHumVoice();
-  generateBreaths();
+  status.innerText = "Relax… soft voice, breathing, and ambience playing.";
+};
 
-  document.getElementById("status").innerText = `Session #${sessionCount}: Relax and enjoy the calming hum.`;
-}
-
-/* ---------- SOFT AMBIENT MUSIC ---------- */
-function generateMusic(){
-  musicNodes.forEach(n=>n.stop?.());
-  musicNodes = [];
-
+/* ---------- AMBIENT MUSIC ---------- */
+function playAmbience(){
   musicGain = audioCtx.createGain();
-  musicGain.gain.value = 0.03;
+  musicGain.gain.value = 0.025;
   musicGain.connect(audioCtx.destination);
 
-  const freqs = [100 + Math.random()*20, 140 + Math.random()*20, 180 + Math.random()*20];
-  freqs.forEach(f=>{
+  [110, 150, 190].forEach(f => {
     const osc = audioCtx.createOscillator();
     osc.type = "sine";
-    osc.frequency.value = f;
+    osc.frequency.value = f + Math.random()*10;
     osc.connect(musicGain);
     osc.start();
-    musicNodes.push(osc);
   });
 }
 
-/* ---------- HUMAN-LIKE HUM ---------- */
-function generateHumVoice(){
-  humGain = audioCtx.createGain();
-  humGain.gain.value = 0.03;
-  humGain.connect(audioCtx.destination);
+/* ---------- BREATH SOUND ---------- */
+function playBreath(){
+  const noise = audioCtx.createBufferSource();
+  const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.8, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
 
-  humOsc = audioCtx.createOscillator();
-  humOsc.type = "sawtooth";
-  humOsc.frequency.value = 120 + Math.random()*20;
+  for(let i=0;i<data.length;i++){
+    data[i] = (Math.random()*2 - 1) * 0.15;
+  }
 
-  // Bandpass for vocal-like timbre
-  const bp = audioCtx.createBiquadFilter();
-  bp.type = "bandpass";
-  bp.frequency.value = 600 + Math.random()*200;
-  bp.Q.value = 6;
+  noise.buffer = buffer;
 
-  // subtle vibrato
-  humLFO = audioCtx.createOscillator();
-  humLFO.type = "sine";
-  humLFO.frequency.value = 0.1 + Math.random()*0.1;
-  const lfoGain = audioCtx.createGain();
-  lfoGain.gain.value = 5;
-  humLFO.connect(lfoGain).connect(humOsc.frequency);
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.value = 800;
 
-  humOsc.connect(bp).connect(humGain);
-  humOsc.start();
-  humLFO.start();
-  humOsc.stop(audioCtx.currentTime + 600); // long session
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + 0.3);
+  gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.8);
+
+  noise.connect(filter).connect(gain).connect(audioCtx.destination);
+  noise.start();
 }
 
-/* ---------- BREATHS ---------- */
-function generateBreaths(){
-  function addBreath(time){
-    const breath = audioCtx.createOscillator();
-    breath.type = "triangle";
-    breath.frequency.value = 50 + Math.random()*20;
+/* ---------- VOICE + BREATHING ---------- */
+function speakWithBreaths(text){
+  const utter = new SpeechSynthesisUtterance(text);
 
-    const breathGain = audioCtx.createGain();
-    breathGain.gain.setValueAtTime(0, audioCtx.currentTime);
-    breathGain.gain.linearRampToValueAtTime(0.02 + Math.random()*0.01, audioCtx.currentTime + 0.05);
-    breathGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.25);
+  const voices = speechSynthesis.getVoices();
+  utter.voice = voices.find(v => v.lang.startsWith("en")) || voices[0];
+  utter.rate = 0.7;
+  utter.pitch = 0.9;
+  utter.volume = 0.85;
 
-    breath.connect(breathGain).connect(audioCtx.destination);
-    breath.start(time);
-    breath.stop(time + 0.25);
+  musicGain.gain.value = 0.012;
+
+  utter.onend = () => {
+    musicGain.gain.value = 0.025;
+  };
+
+  if(voices.length === 0){
+    speechSynthesis.onvoiceschanged = () => speechSynthesis.speak(utter);
+  } else {
+    speechSynthesis.speak(utter);
   }
 
-  // Schedule random breaths every 4–8 seconds
-  for(let i=1;i<120;i++){
-    let t = audioCtx.currentTime + i*(4 + Math.random()*4);
-    addBreath(t);
-  }
+  breathInterval = setInterval(playBreath, 6000);
 }
 </script>
 </body>
