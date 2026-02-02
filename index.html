@@ -2,230 +2,219 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Nature Calm AI</title>
+<title>Calm AI</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
+:root {
+  --bg: #0f1f1c;
+  --card: rgba(255,255,255,0.08);
+  --text: #e9f6f3;
+  --muted: #a8cfc7;
+  --accent: #6fd3c4;
+}
+
+* { box-sizing: border-box; }
+
 body {
   margin: 0;
   height: 100vh;
-  background: linear-gradient(to bottom, #eaf7f1, #cde6db);
-  font-family: system-ui, sans-serif;
+  background: radial-gradient(circle at top, #1a3a34, var(--bg));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--text);
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
 }
 
-.container {
-  width: 90%;
-  max-width: 420px;
+.app {
+  width: 92%;
+  max-width: 900px;
+  background: var(--card);
+  border-radius: 28px;
+  padding: 40px;
+  box-shadow: 0 40px 120px rgba(0,0,0,0.4);
+  backdrop-filter: blur(20px);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.hero {
+  margin-top: 50px;
   text-align: center;
 }
 
-.bubble {
-  width: 120px;
-  height: 120px;
-  margin: 0 auto 25px;
-  background: rgba(255,255,255,0.7);
+.orb {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 30px;
   border-radius: 50%;
-  animation: float 8s ease-in-out infinite;
-  box-shadow:
-    inset -10px -10px 25px rgba(255,255,255,0.9),
-    inset 10px 10px 25px rgba(160,200,180,0.5),
-    0 20px 40px rgba(0,0,0,0.08);
+  background: radial-gradient(circle at top, #a7fff1, #4fbfb0);
+  animation: drift 10s ease-in-out infinite;
+  box-shadow: 0 0 80px rgba(111,211,196,0.6);
 }
 
-@keyframes float {
+@keyframes drift {
   0% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-12px) scale(1.05); }
+  50% { transform: translateY(-14px) scale(1.05); }
   100% { transform: translateY(0) scale(1); }
+}
+
+h1 {
+  font-size: 34px;
+  font-weight: 500;
+}
+
+p {
+  color: var(--muted);
+  max-width: 520px;
+  margin: 15px auto 40px;
 }
 
 textarea {
   width: 100%;
-  height: 120px;
-  border-radius: 30px;
+  max-width: 520px;
+  height: 140px;
+  border-radius: 22px;
   border: none;
-  padding: 20px;
+  padding: 18px;
   font-size: 16px;
-  outline: none;
   resize: none;
-  box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+  outline: none;
+  background: rgba(255,255,255,0.15);
+  color: var(--text);
 }
 
 button {
-  width: 100%;
-  margin-top: 20px;
-  padding: 16px;
-  border-radius: 30px;
+  margin-top: 25px;
+  padding: 16px 34px;
+  border-radius: 999px;
   border: none;
-  font-size: 18px;
-  background: #7fcdbb;
-  color: white;
+  background: var(--accent);
+  font-size: 17px;
+  font-weight: 500;
   cursor: pointer;
+  color: #06332c;
 }
 
 button:hover {
-  background: #69b6a5;
+  opacity: 0.9;
 }
 
 .status {
-  margin-top: 15px;
+  margin-top: 18px;
   font-size: 14px;
-  color: #355;
+  color: var(--muted);
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-  <div class="bubble"></div>
+<div class="app">
+  <div class="header">
+    <div class="logo">Calm AI</div>
+  </div>
 
-  <textarea placeholder="Let your thoughts rest here…"></textarea>
+  <div class="hero">
+    <div class="orb"></div>
 
-  <button onclick="startCalm()">Begin Nature Calm</button>
+    <h1>Let the story carry you</h1>
+    <p>
+      AI-generated music with a calm, smooth voice reading gently — designed
+      to slow your breathing and quiet your mind.
+    </p>
 
-  <div class="status" id="status"></div>
+    <textarea id="textInput" placeholder="Paste a calming book passage or story here…"></textarea>
+
+    <br>
+    <button onclick="startSession()">Begin Calm</button>
+
+    <div class="status" id="status"></div>
+  </div>
 </div>
 
 <script>
-let ctx;
-let active = false;
-let nodes = [];
+let audioCtx;
+let musicNodes = [];
+let speaking = false;
 
-function startCalm() {
-  if (active) return;
-  active = true;
+/* ---------- START ---------- */
+function startSession() {
+  if (speaking) return;
+  speaking = true;
 
   document.getElementById("status").innerText =
-    "Generating natural calm sounds…";
+    "Generating calming music and voice…";
 
-  ctx = new (window.AudioContext || window.webkitAudioContext)();
-
-  createWind();
-  createLeaves();
-  createBirds();
-  createGentleVoice();
-
-  // Auto stop after 3 hours
-  setTimeout(stopCalm, 10800000);
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  generateMusic();
+  speakText();
 }
 
-/* 🌬 WIND */
-function createWind() {
-  const buffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  let last = 0;
+/* ---------- CALM MUSIC GENERATION ---------- */
+function generateMusic() {
+  const baseFreqs = [110, 138, 165]; // calm harmonic base
 
-  for (let i = 0; i < data.length; i++) {
-    const noise = Math.random() * 2 - 1;
-    data[i] = (last + 0.03 * noise) / 1.03;
-    last = data[i];
-  }
-
-  const src = ctx.createBufferSource();
-  src.buffer = buffer;
-  src.loop = true;
-
-  const filter = ctx.createBiquadFilter();
-  filter.type = "lowpass";
-  filter.frequency.value = 700;
-
-  const gain = ctx.createGain();
-  gain.gain.value = 0.18;
-
-  src.connect(filter).connect(gain).connect(ctx.destination);
-  src.start();
-
-  nodes.push(src);
-}
-
-/* 🍃 LEAF RUSTLE */
-function createLeaves() {
-  const osc = ctx.createOscillator();
-  osc.type = "triangle";
-  osc.frequency.value = 200;
-
-  const gain = ctx.createGain();
-  gain.gain.value = 0.02;
-
-  const lfo = ctx.createOscillator();
-  lfo.frequency.value = 0.15;
-
-  const lfoGain = ctx.createGain();
-  lfoGain.gain.value = 80;
-
-  lfo.connect(lfoGain).connect(osc.frequency);
-
-  osc.connect(gain).connect(ctx.destination);
-  osc.start();
-  lfo.start();
-
-  nodes.push(osc, lfo);
-}
-
-/* 🐦 BIRDS (VERY SUBTLE) */
-function createBirds() {
-  setInterval(() => {
-    const osc = ctx.createOscillator();
+  baseFreqs.forEach(freq => {
+    const osc = audioCtx.createOscillator();
     osc.type = "sine";
-    osc.frequency.value = 1800 + Math.random() * 600;
+    osc.frequency.value = freq;
 
-    const gain = ctx.createGain();
-    gain.gain.value = 0.015;
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0.03;
 
-    osc.connect(gain).connect(ctx.destination);
+    const lfo = audioCtx.createOscillator();
+    lfo.frequency.value = 0.05;
+
+    const lfoGain = audioCtx.createGain();
+    lfoGain.gain.value = 0.01;
+
+    lfo.connect(lfoGain).connect(gain.gain);
+    osc.connect(gain).connect(audioCtx.destination);
+
     osc.start();
-    osc.stop(ctx.currentTime + 0.4);
-  }, 12000);
+    lfo.start();
+
+    musicNodes.push(osc, lfo);
+  });
 }
 
-/* 🎤 GENTLE VOCAL AI (NO WORDS) */
-function createGentleVoice() {
-  const osc = ctx.createOscillator();
-  osc.type = "sawtooth";
-  osc.frequency.value = 130;
+/* ---------- SMOOTH VOCAL READING ---------- */
+function speakText() {
+  const text =
+    document.getElementById("textInput").value ||
+    "Take a slow breath. The world does not need anything from you right now. Just rest here.";
 
-  const formantA = ctx.createBiquadFilter();
-  formantA.type = "bandpass";
-  formantA.frequency.value = 650;
-  formantA.Q.value = 6;
+  const utter = new SpeechSynthesisUtterance(text);
 
-  const formantB = ctx.createBiquadFilter();
-  formantB.type = "bandpass";
-  formantB.frequency.value = 1100;
-  formantB.Q.value = 8;
+  const voices = speechSynthesis.getVoices();
+  const calmVoice = voices.find(v =>
+    v.lang.startsWith("en") && v.name.toLowerCase().includes("female")
+  );
 
-  const gain = ctx.createGain();
-  gain.gain.value = 0.035;
+  if (calmVoice) utter.voice = calmVoice;
 
-  const breath = ctx.createOscillator();
-  breath.frequency.value = 0.025;
+  utter.rate = 0.8;
+  utter.pitch = 0.9;
+  utter.volume = 0.8;
 
-  const breathGain = ctx.createGain();
-  breathGain.gain.value = 0.02;
+  utter.onend = () => {
+    document.getElementById("status").innerText =
+      "The story has ended. Music continues…";
+  };
 
-  breath.connect(breathGain).connect(gain.gain);
-
-  osc.connect(formantA)
-     .connect(formantB)
-     .connect(gain)
-     .connect(ctx.destination);
-
-  osc.start();
-  breath.start();
-
-  nodes.push(osc, breath);
-}
-
-function stopCalm() {
-  nodes.forEach(n => { try { n.stop(); } catch(e){} });
-  nodes = [];
-  ctx.close();
-  active = false;
-  document.getElementById("status").innerText = "Session ended 🌙";
+  speechSynthesis.speak(utter);
 }
 </script>
 
