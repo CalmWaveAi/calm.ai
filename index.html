@@ -5,79 +5,27 @@
 <title>Emotion Calm AI</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-:root {
-  --bg:#0f1f1c;
-  --card:rgba(255,255,255,0.08);
-  --text:#e9f6f3;
-  --muted:#a8cfc7;
-  --accent:#6fd3c4;
-}
-
-body {
-  margin:0;
-  height:100vh;
-  background:radial-gradient(circle at top,#1a3a34,var(--bg));
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  color:var(--text);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
-
-.app {
-  width:92%;
-  max-width:900px;
-  background:var(--card);
-  border-radius:28px;
-  padding:36px;
-  backdrop-filter:blur(20px);
-  box-shadow:0 40px 120px rgba(0,0,0,.45);
-}
-
-.header { display:flex; justify-content:space-between; align-items:center; }
-.logo { font-size:22px; font-weight:600; }
-
-.hero { text-align:center; margin-top:40px; }
-.orb {
-  width:140px; height:140px; margin:0 auto 30px;
-  border-radius:50%; background:radial-gradient(circle at top,#a7fff1,#4fbfb0);
-  animation:drift 10s ease-in-out infinite;
-  box-shadow:0 0 80px rgba(111,211,196,.6);
-}
+body { margin:0; height:100vh; display:flex; justify-content:center; align-items:center; background:#0f1f1c; color:#e9f6f3; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+.app { width:90%; max-width:900px; background:rgba(255,255,255,0.08); border-radius:28px; padding:36px; backdrop-filter:blur(20px);}
+textarea { width:100%; height:140px; border-radius:22px; border:none; padding:18px; background:rgba(255,255,255,.15); color:#e9f6f3; resize:none;}
+button { margin-top:22px; padding:16px 36px; border-radius:999px; border:none; background:#6fd3c4; font-size:17px; color:#06332c; cursor:pointer;}
+.status { margin-top:16px; font-size:14px; color:#a8cfc7; }
+.orb { width:140px; height:140px; margin:0 auto 30px; border-radius:50%; background:radial-gradient(circle at top,#a7fff1,#4fbfb0); animation:drift 10s ease-in-out infinite; box-shadow:0 0 80px rgba(111,211,196,.6);}
 @keyframes drift {0%{transform:translateY(0)}50%{transform:translateY(-14px)}100%{transform:translateY(0)}}
-
-textarea {
-  width:100%; max-width:520px; height:140px;
-  border-radius:22px; border:none; padding:18px;
-  background:rgba(255,255,255,.15); color:var(--text); resize:none;
-}
-
-button.main {
-  margin-top:22px; padding:16px 36px; border-radius:999px;
-  border:none; background:var(--accent); font-size:17px; color:#06332c; cursor:pointer;
-}
-
-.status { margin-top:16px; font-size:14px; color:var(--muted); }
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="header"><div class="logo">Emotion Calm AI</div></div>
-  <div class="hero">
-    <div class="orb"></div>
-    <h1>Relax and Let Go</h1>
-    <textarea id="textInput" placeholder="Describe your current feeling…"></textarea>
-    <br>
-    <button class="main" onclick="startCalm()">Begin Calm</button>
-    <div class="status" id="status"></div>
-  </div>
+  <div class="orb"></div>
+  <h1>Relax and Let Go</h1>
+  <textarea id="textInput" placeholder="Describe your current feeling…"></textarea>
+  <br>
+  <button onclick="startCalm()">Begin Calm</button>
+  <div class="status" id="status"></div>
 </div>
 
 <script>
-let audioCtx;
-let musicGain;
-let musicNodes=[];
-let speaking=false;
+let audioCtx, musicGain, musicNodes, voiceOsc, voiceGain;
 
 /* ---------- EMOTION SCAN ---------- */
 function scanEmotion(text){
@@ -88,39 +36,35 @@ function scanEmotion(text){
   return "calm";
 }
 
-/* ---------- GENERATE STORY BASED ON EMOTION ---------- */
+/* ---------- GENERATE STORY ---------- */
 function generateStory(emotion){
   if(emotion==="comforting")
-    return "Take a slow breath. You are safe. Gentle warmth surrounds you. Everything is okay, and you can let your thoughts rest.";
+    return "Take a slow breath. Gentle warmth surrounds you.";
   if(emotion==="soothing")
-    return "Relax your body. Feel your breath slowly calming your mind. Each tension melts away. You are safe and supported.";
+    return "Relax your body. Feel tension melt away.";
   if(emotion==="sleepy")
-    return "Your body is ready to rest. Feel the heaviness of comfort and allow yourself to drift into a peaceful sleep.";
-  return "Everything around you moves slowly and gently. Let the world wait while you rest and feel calm.";
+    return "Your body is ready to rest. Drift peacefully.";
+  return "Everything moves slowly. Let the world wait while you rest.";
 }
 
 /* ---------- START SESSION ---------- */
 function startCalm(){
-  if(speaking) return;
-  speaking=true;
   document.getElementById("status").innerText="Creating calming music and soothing voice…";
-
   audioCtx=new (window.AudioContext||window.webkitAudioContext)();
   generateMusic();
+  generateVoice();
 
   const text=document.getElementById("textInput").value;
   const emotion=scanEmotion(text);
-  const story=generateStory(emotion);
-
-  speakStory(story);
+  document.getElementById("status").innerText="Relaxing… enjoy the calming voice";
 }
 
-/* ---------- GENERATE CALM MUSIC ---------- */
+/* ---------- CALM MUSIC ---------- */
 function generateMusic(){
   musicGain=audioCtx.createGain();
   musicGain.gain.value=0.04;
   musicGain.connect(audioCtx.destination);
-
+  musicNodes=[];
   [110,138,165].forEach(f=>{
     const osc=audioCtx.createOscillator();
     osc.type="sine"; osc.frequency.value=f;
@@ -130,25 +74,33 @@ function generateMusic(){
   });
 }
 
-/* ---------- SOOTHING AI VOICE ---------- */
-function speakStory(text){
-  const u=new SpeechSynthesisUtterance(text);
-  const voices=speechSynthesis.getVoices();
-  const calmVoice=voices.find(v=>v.lang.startsWith("en")&&v.name.toLowerCase().includes("female"));
-  if(calmVoice) u.voice=calmVoice;
+/* ---------- SOOTHING VOICE (HUM-LIKE) ---------- */
+function generateVoice(){
+  voiceOsc=audioCtx.createOscillator();
+  voiceOsc.type="sawtooth";
+  voiceOsc.frequency.value=120; // base pitch
 
-  u.rate=0.75;  // slow, soothing pace
-  u.pitch=0.9;  // warm tone
-  u.volume=0.85;
+  const bandpass=audioCtx.createBiquadFilter();
+  bandpass.type="bandpass";
+  bandpass.frequency.value=700;
+  bandpass.Q.value=5;
 
-  // Reduce music volume while speaking
-  musicGain.gain.value=0.02;
-  u.onend=()=>{
-    musicGain.gain.value=0.04;
-    document.getElementById("status").innerText="Relaxing… music continues";
-  };
+  const gain=audioCtx.createGain();
+  gain.gain.value=0.035;
 
-  speechSynthesis.speak(u);
+  // subtle vibrato
+  const lfo=audioCtx.createOscillator();
+  lfo.type="sine"; lfo.frequency.value=0.15;
+  const lfoGain=audioCtx.createGain();
+  lfoGain.gain.value=5;
+  lfo.connect(lfoGain).connect(voiceOsc.frequency);
+
+  voiceOsc.connect(bandpass).connect(gain).connect(audioCtx.destination);
+
+  voiceOsc.start();
+  lfo.start();
+
+  voiceOsc.stop(audioCtx.currentTime + 180); // 3-hour long session
 }
 </script>
 </body>
