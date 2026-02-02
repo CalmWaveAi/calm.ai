@@ -1,15 +1,13 @@
-index.html
-
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Calm AI</title>
+  <title>Lets take a break</title>
   <meta name="description" content="AI-generated calming sound to reduce stress and anxiety">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body {
       font-family: Sondra, sans-serif;
-      background: #cad5e4;
+      background: #fffff0;
       text-align: center;
       padding: 30px;
     }
@@ -22,10 +20,10 @@ index.html
     button {
       margin-top: 15px;
       padding: 15px 25px;
-      font-size: 18px;
+      font-size: 24px;
       border: none;
       border-radius: 8px;
-      background: #5abfbf;
+      background: #ffffff;
       color: white;
       cursor: pointer;
     }
@@ -60,7 +58,7 @@ function startCalm() {
   if (isPlaying) return; // prevent multiple starts
   const text = document.getElementById("feelings").value.toLowerCase();
   const status = document.getElementById("status");
-  status.innerText = "Calming AI sound is playing. Take slow breaths 💙";
+  status.innerText = "Calm down,take deep breaths.";
 
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
